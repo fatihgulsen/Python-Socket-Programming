@@ -1,4 +1,6 @@
+from ast import While
 import socket
+from time import sleep
 
 ClientSocket = socket.socket()
 host = '127.0.0.1'
@@ -11,33 +13,44 @@ except socket.error as e:
     print(str(e))
 
 
-def register(username):
+def register():
     username = input('Register Username: ')
+    username = '%' + username
     ClientSocket.send(str.encode(username))
     Response = ClientSocket.recv(1024)
     Response.decode('utf-8')
     if Response == '1':
-        print('Access')
+        print('Success')
         return True
-    else:
+    elif Response == '0':
         print('Denied')
         return False
+    else:
+        print(Response)
+        print('!!Warning!!')
     pass
 
-def login(username):
+def login():
     username = input('Login Username: ')
+    username = '!' + username
     ClientSocket.send(str.encode(username))
     Response = ClientSocket.recv(1024)
     Response.decode('utf-8')
+    #print(Response.decode('utf-8'))
     if Response == '1':
-        print('Access')
+        print('Success')
         return True
-    else:
+    elif Response == '0':
         print('Denied')
         return False
+    else:
+        print(Response)
+        print('!!Warning!!')
+
 
 def send_message():
     Input = input('Say Something: ')
+    Input = '&' + Input
     ClientSocket.send(str.encode(Input))
     Response = ClientSocket.recv(1024)
     print(Response.decode('utf-8'))
@@ -45,25 +58,17 @@ def send_message():
 
 
 def menu():
-    print('To Server')
-    print('To User')
-    print('to Group')
+    print('To Server(1)\nTo User(2)\nTo Group(3)\nQuit(q)')
     pass
 
 Response = ClientSocket.recv(1024)
-while True:
-
 
 def main():
-    Input = input('Login or Username : (1,2)')
-    if Input == 1:
-        login()
-    elif Input==0:
-        register
-    else:
-        print('Wrong selection')
     while True:
-        send_message()
-
+        success = register()
+        
+        
+if __name__ == '__main__':
+    main()
 
 ClientSocket.close()
