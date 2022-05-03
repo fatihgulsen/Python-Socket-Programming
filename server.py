@@ -19,6 +19,9 @@ host = '127.0.0.1'
 port = 1233
 ThreadCount = 0
 
+all_connection = {}
+# todo ip ve username sakla ona göre iletim sağlanacak
+
 try:
     ServerSocket.bind((host, port))
 except socket.error as e:
@@ -42,13 +45,15 @@ def message_control(message):
     
 def login_server(username):
     return '1'
+    #todo login yap register benzer ancak her girişte mesaj kontrolü sağlanacak
+    # ileti ysapıldığına dair
     pass
 
 def register_server(username):
     myquery = { "username": username }
     mydoc = userdb.find_one(myquery)
     print(mydoc)
-    if mydoc is None: # TODO hatalı veri
+    if mydoc is None:
         return "1"
     else:
         return "0"
