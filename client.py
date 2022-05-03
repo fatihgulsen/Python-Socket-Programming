@@ -2,6 +2,8 @@ from ast import While
 import socket
 from time import sleep
 
+from numba.cuda import In
+
 Response = None
 ClientSocket = socket.socket()
 host = '127.0.0.1'
@@ -17,7 +19,7 @@ except socket.error as e:
 def register():
     username = input('Register Username: ')
     username = '%' + username
-    ClientSocket.send(str.encode(username))
+    ClientSocket.sendall(str.encode(username))
     Response = ClientSocket.recv(1024)
     Response.decode()
     if Response == b'1':
@@ -35,7 +37,7 @@ def register():
 def login():
     username = input('Login Username: ')
     username = '!' + username
-    ClientSocket.send(str.encode(username))
+    ClientSocket.sendall(str.encode(username))
     Response = ClientSocket.recv(1024)
     Response.decode('utf-8')
     # print(Response.decode('utf-8'))
@@ -50,19 +52,19 @@ def login():
         print('!!Warning!!')
 
 
-def send_message_user():
+def send_message_to_user():
     Input = input('Say Something: ')
-    Input = '&' + Input
-    ClientSocket.send(str.encode(Input))
+    Input = '&!' + Input
+    ClientSocket.sendall(str.encode(Input))
     Response = ClientSocket.recv(1024)
     print(Response.decode('utf-8'))
     pass
 
 
 def send_message_to_server():
-    Input = input('Say Something: ')
-    Input = '&' + Input
-    ClientSocket.send(str.encode(Input))
+    Input = input('Server Message: ')
+    Input = '&+' + Input
+    ClientSocket.sendall(str.encode(Input))
     Response = ClientSocket.recv(1024)
     print(Response.decode('utf-8'))
     pass
@@ -70,8 +72,8 @@ def send_message_to_server():
 
 def send_message_to_group():
     Input = input('Say Something: ')
-    Input = '&' + Input
-    ClientSocket.send(str.encode(Input))
+    Input = '&*' + Input
+    ClientSocket.sendall(str.encode(Input))
     Response = ClientSocket.recv(1024)
     print(Response.decode('utf-8'))
 
@@ -85,7 +87,14 @@ def menu():
         if Input.capitalize() == 'Q':
             break
             pass
-        elif Input.capitalize() == 1:
+        elif Input.capitalize() == '1':
+            send_message_to_server()
+            pass
+        elif Input.capitalize() == '2':
+            send_message_to_user()
+            pass
+        elif Input.capitalize() == '3':
+            send_message_to_group()
             pass
 
     # todo input ile veri la seçenekleri diz ona göre ilerle
@@ -94,22 +103,39 @@ def menu():
 
 
 def register_login_menu():
-    print('Register (1) \nLogin (2)')
-    # todo input ile veri la seçenekleri diz ona göre ilerle
-
+    Input = input('Register (1) \nLogin (2)\nQuit (q) ')
+    if Input.capitalize() == 'Q':
+        return False
+        pass
+    elif Input.capitalize() == '1':
+        while True:
+            success = register()
+            if success:
+                success = login()
+                if success:
+                    return True
+            pass
+    elif Input.capitalize() == '2':
+        while True:
+            success = login()
+            if success:
+                return True
+        pass
+    else:
+        return False
     pass
+
 
 Response = ClientSocket.recv(1024)
 
 
 def main():
     while True:
-        success = register()
-        if success:
-            login_success = login()
-            if login_success:
-                menu()
-
+        success = register_login_menu()
+        if success is False:
+            break
+        else:
+            menu()
             break
 
 
