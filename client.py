@@ -1,19 +1,36 @@
-from ast import While
+import os
 import socket
+from threading import Thread
 from time import sleep
-
-from numba.cuda import In
 
 Response = None
 ClientSocket = socket.socket()
 host = '127.0.0.1'
 port = 1233
-
+username = None
 print('Waiting for connection')
 try:
     ClientSocket.connect((host, port))
 except socket.error as e:
     print(str(e))
+
+
+def recive_message():
+    while True:
+        try:
+            Response = ClientSocket.recv(1024)
+            print('\n')
+            if Response.decode('utf-8') == '1':
+                # print('Mesaj Gönderildi')
+                continue
+            elif Response.decode('utf-8') == '0':
+                # print('Mesaj Gönderilemedi')
+                continue
+            # else:
+
+            print(Response.decode())
+        except Exception as e:
+            print('Hata : ', e)
 
 
 def register():
@@ -35,6 +52,7 @@ def register():
 
 
 def login():
+    global username
     username = input('Login Username: ')
     username = '!' + username
     ClientSocket.sendall(str.encode(username))
@@ -53,37 +71,57 @@ def login():
 
 
 def send_message_to_user():
-    Input = input('Say Something: ')
+    Input = input('Say Something (user+message): ')
     Input = '&!' + Input
     ClientSocket.sendall(str.encode(Input))
-    Response = ClientSocket.recv(1024)
-    print(Response.decode('utf-8'))
+    # Response = ClientSocket.recv(1024)
+    # # print(Response.decode('utf-8'))
+    # if Response.decode('utf-8') == b'1':
+    #     print('Mesaj Gönderildi')
+    # elif Response.decode('utf-8') == b'0':
+    #     print('Mesaj Gönderilemedi')
     pass
 
 
 def send_message_to_server():
-    Input = input('Server Message: ')
+    Input = input('Server Message (only online user): ')
     Input = '&+' + Input
     ClientSocket.sendall(str.encode(Input))
-    Response = ClientSocket.recv(1024)
-    print(Response.decode('utf-8'))
+    # Response = ClientSocket.recv(1024)
+    # # print(Response.decode('utf-8'))
+    # if Response.decode('utf-8') == b'1':
+    #     print('Mesaj Gönderildi')
+    # elif Response.decode('utf-8') == b'0':
+    #     print('Mesaj Gönderilemedi')
     pass
 
 
 def send_message_to_group():
-    Input = input('Say Something: ')
+    Input = input('Say Something (groupname+message): ')
     Input = '&*' + Input
     ClientSocket.sendall(str.encode(Input))
-    Response = ClientSocket.recv(1024)
-    print(Response.decode('utf-8'))
-
-    # todo send messae olan bütün  fonsiyonları düzenle
+    # Response = ClientSocket.recv(1024)
+    # # print(Response.decode('utf-8'))
+    # if Response.decode('utf-8') == b'1':
+    #     print('Mesaj Gönderildi')
+    # elif Response.decode('utf-8') == b'0':
+    #     print('Mesaj Gönderilemedi')
     pass
 
 
+def online_users():
+    ClientSocket.sendall(str.encode('//onlineusers'))
+
+
+def offline_message():
+    ClientSocket.sendall(str.encode('//offlinemessage'))
+
+
 def menu():
+    print('Username : ', username[1:])
+    print('To Server(1)\nTo User(2)\nTo Group(3)\nOnline Users(9)\nOffline Messages(99)\nQuit(q)\nClear\nMenu')
     while True:
-        Input = input('To Server(1)\nTo User(2)\nTo Group(3)\nQuit(q)')
+        Input = input('\nSelect menu (Q,1,2,3,9,99,cls,menu): ')
         if Input.capitalize() == 'Q':
             break
             pass
@@ -96,14 +134,24 @@ def menu():
         elif Input.capitalize() == '3':
             send_message_to_group()
             pass
-
-    # todo input ile veri la seçenekleri diz ona göre ilerle
-
+        elif Input.capitalize() == '9':
+            online_users()
+            pass
+        elif Input.capitalize() == "99":
+            offline_message()
+            pass
+        elif Input.capitalize() == "CLS":
+            os.system('cls')
+        elif Input.capitalize() == "MENU":
+            print('To Server(1)\nTo User(2)\nTo Group(3)\nOnline Users(9)\nOffline Messages(99)\nQuit(q)\nClear\nMenu')
+        else:
+            print('Hatalı giriş')
+    os.system('exit')
     pass
 
 
 def register_login_menu():
-    Input = input('Register (1) \nLogin (2)\nQuit (q) ')
+    Input = input('Register (1)\nLogin (2)\nQuit (q)\nSelect (Q,1,2):  ')
     if Input.capitalize() == 'Q':
         return False
         pass
@@ -122,6 +170,7 @@ def register_login_menu():
                 return True
         pass
     else:
+        print('Hatali Giriş')
         return False
     pass
 
@@ -130,13 +179,12 @@ Response = ClientSocket.recv(1024)
 
 
 def main():
-    while True:
-        success = register_login_menu()
-        if success is False:
-            break
-        else:
-            menu()
-            break
+    success = register_login_menu()
+    os.system('cls')
+    if success:
+        receive_thread = Thread(target=recive_message)
+        receive_thread.start()
+        menu()
 
 
 if __name__ == '__main__':
