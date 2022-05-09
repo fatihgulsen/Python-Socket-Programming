@@ -1,5 +1,7 @@
 import socket
 from _thread import *
+
+from sphinx.addnodes import meta
 from sqlalchemy import null
 from pymongo import MongoClient
 import pymongo
@@ -10,6 +12,7 @@ socketdb = client['SocketProgramming']
 
 userdb = socketdb['User']
 messagedb = socketdb['Message']
+groupdb = socketdb['Group']
 
 ServerSocket = socket.socket()
 host = '127.0.0.1'
@@ -42,14 +45,21 @@ def message_control(message, _client, _address):
         return_value = online_users(_client)
     elif message == '//offlinemessage':
         return_value = offline_message_send(_client)
-
+    elif message == '//allusers':
+        return_value = all_users(_client)
+    elif message.startswith('//group+'):  # todo group member ekle
+        return_value = group_member(_client,message)
+    elif message.startswith('//usermember+'):  # todo user member group ekle
+        return_value = offline_message_send(_client)
     return return_value
 
 
 def online_users(_client):
     try:
-        for i in all_connection:
-            _client.sendall(str.encode(i['username'] + ' (online)'))
+        res = [ele['username'] for ele in all_connection]
+        users = ", ".join(res)
+        # print(users)
+        _client.sendall(str.encode('Online users : ' + users))
         return '1'
     except:
         return '0'
@@ -80,15 +90,15 @@ def register_server(username):
 
 
 def send_message(_message, _client):
-    if _message.startswith('+'):  ## Server
+    if _message.startswith('+'):  # Server
         _message = _message[1:]
         send_message_to_server(_message, _client)
         return '1'
-    elif _message.startswith('!'):  ## User
+    elif _message.startswith('!'):  # User
         _message = _message[1:]
         send_message_to_user(_message, _client)
         return '1'
-    elif _message.startswith('*'):  ## group
+    elif _message.startswith('*'):  # Group
         _message = _message[1:]
         send_message_to_group(_message, _client)
         return '1'
@@ -99,10 +109,7 @@ def send_message(_message, _client):
 
 
 def send_message_to_server(_message, _client):
-    username = None
-    for client in all_connection:
-        if client['client'] == _client:
-            username = client['username']
+    username = client_to_username(_client)
 
     for client in all_connection:
         if client['client'] != _client:
@@ -117,33 +124,62 @@ def send_message_to_server(_message, _client):
 
 
 def send_message_to_user(_message, _client):
-    username = None
+    fromUsername = None
     user, message = _message.split('+', 1)
-    userClient = None
+    toUserClient = None
+
     for client in all_connection:
         if client['client'] == _client:
-            username = client['username']
+            fromUsername = client['username']
         elif client['username'] == user:
-            userClient = client['client']
+            toUserClient = client['client']
         else:
             return '0'
-    if userClient:
-        userClient.sendall(str.encode(username + '(user) : ' + message))
-        insert_doc = {'from': username, 'to': user, 'message': message, 'fowarded': True}
+    if toUserClient:
+        toUserClient.sendall(str.encode(fromUsername + '(user) : ' + message))
+        insert_doc = {'from': fromUsername, 'to': user, 'message': message, 'fowarded': True}
         messagedb.insert_one(insert_doc)
-    elif userClient is None:
-        insert_doc = {'from': username, 'to': user, 'message': message, 'fowarded': False}
+    elif toUserClient is None:
+        insert_doc = {'from': fromUsername, 'to': user, 'message': message, 'fowarded': False}
         messagedb.insert_one(insert_doc)
 
-    return username + '(user) : ' + message
+    return fromUsername + '(user) : ' + message
     pass
 
 
 def send_message_to_group(_message, _client):
-    username = None
-    for client in all_connection:
-        if client['client'] == _client:
-            username = client['username']
+    group, message = _message.split('+', 1)
+    myquery = {"groupname": group}
+    mydoc = groupdb.find_one(myquery)
+    if mydoc is None:
+        _client.sendall(str.encode('not created ' + group))
+        return '0'
+
+    groupMembers = mydoc['members']
+
+    fromUsername = client_to_username(_client)
+    if fromUsername in groupMembers:
+        for toUsername in groupMembers:
+            if fromUsername == toUsername:
+                continue
+            else:
+                toUserClient = username_to_client(toUsername)
+                if toUserClient:
+                    toUserClient.sendall(str.encode(fromUsername + ' (' + group + ') : ' + message))
+                    insert_doc = {'from': fromUsername, 'to': toUsername, 'message': message, 'forwarded': True,
+                                  'groupname': group
+                                  }
+                    messagedb.insert_one(insert_doc)
+                else:
+                    insert_doc = {'from': fromUsername, 'to': toUsername, 'message': message, 'forwarded': False,
+                                  'groupname': group
+                                  }
+                    messagedb.insert_one(insert_doc)
+                    pass
+        return '1'
+    else:
+        _client.sendall(str.encode('not in ' + group))
+        return '0'
     pass
 
     pass
@@ -162,13 +198,45 @@ def offline_message_send(_client):
         try:
             _from = i['from']
             message = i['message']
-            _client.sendall(str.encode(_from + ' (offline mesaj) : ' + message))
+            try:
+                group = i['groupname']
+            except:
+                group = None
+
+            if group:
+                _client.sendall(str.encode(_from + ' (offline ' + group + ' message) : ' + message))
+            else:
+                _client.sendall(str.encode(_from + ' (offline user message) : ' + message))
+
         except Exception as e:
             print('Hata : ', e)
     messagedb.update_many(myquery, newvalues)
 
     return '1'
     pass
+
+
+def all_users(_client):
+    try:
+        res = [ele['username'] for ele in userdb.find()]
+        users = ", ".join(res)
+        _client.sendall(str.encode('All users : ' + users))
+        return '1'
+    except:
+        return '0'
+    pass
+
+
+def group_member(_client, _message):
+    iter, group = _message.split('+', 1)
+    myquery = {"groupname": group}
+    try:
+        res = groupdb.find_one(myquery)
+        users = ", ".join(res['members'])
+        _client.sendall(str.encode(group + ' users : ' + users))
+        return '1'
+    except:
+        return '0'
 
 
 def disconnect_user_delete(_address):
@@ -192,6 +260,22 @@ def threaded_client(connection, _address):
             break
     disconnect_user_delete(address)
     connection.close()
+
+
+def client_to_username(_client):
+    username = None
+    for client in all_connection:
+        if client['client'] == _client:
+            username = client['username']
+    return username
+
+
+def username_to_client(username: str):
+    userClient = None
+    for client in all_connection:
+        if client['username'] == username:
+            userClient = client['client']
+    return userClient
 
 
 if __name__ == '__main__':

@@ -1,7 +1,6 @@
 import os
 import socket
 from threading import Thread
-from time import sleep
 
 Response = None
 ClientSocket = socket.socket()
@@ -15,7 +14,7 @@ except socket.error as e:
     print(str(e))
 
 
-def recive_message():
+def receive_message():
     while True:
         try:
             Response = ClientSocket.recv(1024)
@@ -113,15 +112,29 @@ def online_users():
     ClientSocket.sendall(str.encode('//onlineusers'))
 
 
+def all_users():
+    ClientSocket.sendall(str.encode('//allusers'))
+
+
+def group_members(groupname):  # todo menude ekle
+    ClientSocket.sendall(str.encode('//group+' + groupname))
+
+
+def user_group_members():
+    global username
+    if username is not None:
+        ClientSocket.sendall(str.encode('//usermember+' + username))
+
+
 def offline_message():
     ClientSocket.sendall(str.encode('//offlinemessage'))
 
 
 def menu():
     print('Username : ', username[1:])
-    print('To Server(1)\nTo User(2)\nTo Group(3)\nOnline Users(9)\nOffline Messages(99)\nQuit(q)\nClear\nMenu')
+    print('To Server(1)\nTo User(2)\nTo Group(3)\nUser Menu(9)\nOffline Messages(99)\nQuit(q)\nClear(c)\nMenu(m)')
     while True:
-        Input = input('\nSelect menu (Q,1,2,3,9,99,cls,menu): ')
+        Input = input('\nSelect menu (Q,1,2,3,9,99,c,m): ')
         if Input.capitalize() == 'Q':
             break
             pass
@@ -135,15 +148,19 @@ def menu():
             send_message_to_group()
             pass
         elif Input.capitalize() == '9':
-            online_users()
+            users_menu()
             pass
         elif Input.capitalize() == "99":
             offline_message()
             pass
-        elif Input.capitalize() == "CLS":
+        elif Input.capitalize() == 'C':
             os.system('cls')
-        elif Input.capitalize() == "MENU":
+            print('Username : ', username[1:])
+            pass
+        elif Input.capitalize() == 'M':
+            print('Username : ', username[1:])
             print('To Server(1)\nTo User(2)\nTo Group(3)\nOnline Users(9)\nOffline Messages(99)\nQuit(q)\nClear\nMenu')
+            pass
         else:
             print('Hatalı giriş')
     os.system('exit')
@@ -175,6 +192,19 @@ def register_login_menu():
     pass
 
 
+def users_menu():
+    print('\nAll Users(1)\nOnline Users(2)\nGroup Members(3)\nGroup List(4)\n')
+    Input = input('\nSelect menu (1,2,3,4): ')
+    if Input == '1':
+        all_users()
+    elif Input == '2':
+        online_users()
+    elif Input == '3':
+        group_members(input('Group Name : '))
+    elif Input == '4':
+        user_group_members()
+
+
 Response = ClientSocket.recv(1024)
 
 
@@ -182,7 +212,7 @@ def main():
     success = register_login_menu()
     os.system('cls')
     if success:
-        receive_thread = Thread(target=recive_message)
+        receive_thread = Thread(target=receive_message)
         receive_thread.start()
         menu()
 
