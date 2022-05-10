@@ -17,6 +17,10 @@ except socket.error as e:
 
 
 def receive_message():
+    """
+    Sunucu tarafından gelen mesajları okur. Thread sayesinde kullanıcı mesaj bekleme satırına girmez
+    :return:
+    """
     while True:
         try:
             Response = ClientSocket.recv(1024)
@@ -36,6 +40,10 @@ def receive_message():
 
 
 def register():
+    """
+    Kullanıcı kayıt işlemleri yapılır. Sunucuya gönderirken prefix ekler
+    :return:True veya False , kayıt işleminin başarısı
+    """
     username = input('Register Username: ')
     username = '%' + username
     ClientSocket.sendall(str.encode(username))
@@ -54,6 +62,10 @@ def register():
 
 
 def login():
+    """
+    Kullanıcı giriş işlemleri yapılır. Sunucuya gönderirken prefix ekler
+    :return: True veya False (Bool) kullanıcı giriş başarısı
+    """
     global username
     username = input('Login Username: ')
     username = '!' + username
@@ -73,6 +85,10 @@ def login():
 
 
 def send_message_to_user():
+    """
+    Belirtilen kullanıcıya mesaj gönderir. Sunucuya gönderirken prefix ekler
+    :return: None
+    """
     Input = input('Say Something (user+message): ')
     Input = '&!' + Input
     ClientSocket.sendall(str.encode(Input))
@@ -86,6 +102,10 @@ def send_message_to_user():
 
 
 def send_message_to_server():
+    """
+    Sunucuya bağlı tüm kullancılara mesaj yollanmasını sağlar. Sunucuya gönderirken prefix ekler
+    :return: None
+    """
     Input = input('Server Message (only online user): ')
     Input = '&+' + Input
     ClientSocket.sendall(str.encode(Input))
@@ -99,6 +119,10 @@ def send_message_to_server():
 
 
 def send_message_to_group():
+    """
+    Belirtilen gruba mesaj yollanmasını sağlar. Sunucuya gönderirken prefix ekler
+    :return: None
+    """
     Input = input('Say Something (groupname+message): ')
     Input = '&*' + Input
     ClientSocket.sendall(str.encode(Input))
@@ -112,25 +136,45 @@ def send_message_to_group():
 
 
 def online_users():
+    """
+    Sunucuya bağlı kullanıcıları listeler. Sunucuya direkt mesaj yollar
+    :return: None
+    """
     ClientSocket.sendall(str.encode('//onlineusers'))
 
 
 def all_users():
+    """
+    Sunucuya kayıtlı tüm kullanıcıları listeler. Sunucuya direkt mesaj yollar
+    :return: None
+    """
     ClientSocket.sendall(str.encode('//allusers'))
 
 
 def group_members():
+    """
+    Girilen grup ismine göre üye tüm kullanıcıları listeler. Sunucuya gönderirken prefix ekler
+    :return: None
+    """
     groupname = input('Group Name : ')
     ClientSocket.sendall(str.encode('//group+' + groupname))
 
 
 def user_group_members():
+    """
+    Kullanıcının üye olduğu tüm grupları listeler. Sunucuya gönderirken prefix ve username direkt yollanır
+    :return: None
+    """
     global username
     if username is not None:
         ClientSocket.sendall(str.encode('//usermember+' + username))
 
 
 def create_group():
+    """
+    Girilen grup isminde grup kurmak için kullanılır. Sunucuya gönderirken prefix ekler
+    :return: None
+    """
     Input = input('Create Group name : ')
     if Input is not None:
         ClientSocket.sendall(str.encode("//create+"+Input))
@@ -138,6 +182,10 @@ def create_group():
 
 
 def add_group():
+    """
+    Mevcut gruba üye eklemeyi sağlar. Sunucuya gönderirken prefix ekler
+    :return: None
+    """
     Input = input('Add group member (groupname+user+user..) : ')
     if Input is not None:
         ClientSocket.sendall(str.encode("//addgroup+"+Input))
@@ -145,10 +193,18 @@ def add_group():
 
 
 def offline_message():
+    """
+    Giriş yapmış kullanıcının offline iken görmek istediği tüm mesajları görüntüler. Sunucuya direkt olarak yollar
+    :return:
+    """
     ClientSocket.sendall(str.encode('//offlinemessage'))
 
 
 def menu():
+    """
+    Kullanıcı menusu
+    :return: None
+    """
     print('Username : ', username[1:])
     print('To Server(1)\nTo User(2)\nTo Group(3)\nUser Menu(9)\nOffline Messages(99)\nQuit(q)\nClear(c)\nMenu(m)')
     while True:
@@ -186,6 +242,10 @@ def menu():
 
 
 def register_login_menu():
+    """
+    Kullanıcı kayıt menusu
+    :return: None
+    """
     Input = input('Register (1)\nLogin (2)\nQuit (q)\nSelect (Q,1,2):  ')
     if Input.capitalize() == 'Q':
         return False
@@ -211,6 +271,10 @@ def register_login_menu():
 
 
 def users_menu():
+    """
+    Kullanıcı işlem menusu
+    :return: None
+    """
     print('\nAll Users(1)\nOnline Users(2)\nGroup Members(3)\nGroup List(4)\n')
     Input = input('\nSelect menu (1,2,3,4): ')
     if Input == '1':
@@ -224,6 +288,10 @@ def users_menu():
 
 
 def group_menu():
+    """
+    Kullanıcı grup için işlem menusu
+    :return: None
+    """
     print("Group message(1)\nCreate Group(2)\nAdd member Group(3)")
     Input = input("Select menu (1,2,3): ")
     if Input == '1':
@@ -238,6 +306,10 @@ Response = ClientSocket.recv(1024)
 
 
 def main():
+    """
+    main
+    :return:
+    """
     success = register_login_menu()
     os.system('cls')
     if success:

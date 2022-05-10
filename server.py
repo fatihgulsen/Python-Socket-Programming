@@ -30,6 +30,13 @@ ServerSocket.listen(5)
 
 
 def message_control(message, _client, _address):
+    """
+    Gelen mesajları kontrol eder. Alt fonksiyonlara ayrıştırır.
+    :param message: Gelen mesaj (str)
+    :param _client: Gönderen client (socket.client)
+    :param _address: Gönderen adres (socket.address)
+    :return:  1 veya 0 (str)
+    """
     return_value = null
     if message.startswith('!'):
         username = message[1:]
@@ -59,6 +66,12 @@ def message_control(message, _client, _address):
 
 
 def online_users(_client):
+    """
+    Sokete bağlı tüm clientlerin giriş yapıldıktan sonra kullanıcı adını
+    hedef cliente yollar
+    :param _client: Gönderen client (socket.client)
+    :return: 1 veya 0 (str)
+    """
     try:
         res = [ele['username'] for ele in all_connection]
         users = ", ".join(res)
@@ -70,6 +83,13 @@ def online_users(_client):
 
 
 def login_server(username, _client, _address):
+    """
+    Clientlerin login olmasını sağlar
+    :param username: Giriş yapılmak istenen kullanıcı adı (str)
+    :param _client: Giriş yapmak isteyen client (socket.client)
+    :param _address: Giriş yapmak isteyen adres (socket.address)
+    :return: 1 veya 0 (str) , 1 onay 0 red
+    """
     myquery = {"username": username}
     mydoc = userdb.find_one(myquery)
     # print(mydoc)
@@ -82,6 +102,11 @@ def login_server(username, _client, _address):
 
 
 def register_server(username):
+    """
+    Clientlerin kullanıcı kayıt etmelerini sağlar
+    :param username: Kayıt edilmek istenen kullanıcı adı (str)
+    :return: 1 veya 0 (str) 1 onay 0 red
+    """
     myquery = {"username": username}
     mydoc = userdb.find_one(myquery)
     # print(mydoc)
@@ -94,6 +119,12 @@ def register_server(username):
 
 
 def send_message(_message, _client):
+    """
+    Gelen mesajları prefixlerine göre ayırmayı sağlar
+    :param _message: Gelen mesaj (str)
+    :param _client: Gönderen client (socket.client)
+    :return: 1 veya 0 (str)
+    """
     if _message.startswith('+'):  # Server
         _message = _message[1:]
         send_message_to_server(_message, _client)
@@ -113,8 +144,13 @@ def send_message(_message, _client):
 
 
 def send_message_to_server(_message, _client):
+    """
+    Server a bağlı tüm clientlere mesajı iletir.
+    :param _message: Gönderilmek istenen mesaj (str)
+    :param _client: Gönderen client (socket.client)
+    :return: None
+    """
     username = client_to_username(_client)
-
     for client in all_connection:
         if client['client'] != _client:
             connection = client['client']
@@ -128,6 +164,12 @@ def send_message_to_server(_message, _client):
 
 
 def send_message_to_user(_message, _client):
+    """
+    Belirlenen kullanıcı adına mesaj yollar
+    :param _message: Gönderilmek istenen  mesaj (str) exp = (username+message)
+    :param _client: Gönderen client (socket.client)
+    :return: client.username + (user) + message (str)
+    """
     fromUsername = None
     user, message = _message.split('+', 1)
     toUserClient = None
@@ -152,6 +194,12 @@ def send_message_to_user(_message, _client):
 
 
 def send_message_to_group(_message, _client):
+    """
+    Belirlenen gruba mesaj yollar
+    :param _message: önderilmek istenen  mesaj (str) exp = (groupname+message)
+    :param _client: Gönderen client (socket.client)
+    :return: 1 veya 0 (str)
+    """
     group, message = _message.split('+', 1)
     myquery = {"groupname": group}
     mydoc = groupdb.find_one(myquery)
@@ -190,6 +238,11 @@ def send_message_to_group(_message, _client):
 
 
 def exist_group(group_name):
+    """
+    Grubun veri tabanında kaydını sorgular
+    :param group_name: Sorgulanacak grup ismi (str)
+    :return: 0 veya 1 (int)
+    """
     myquery = {"groupname": group_name}
     mydoc = groupdb.find_one(myquery)
     if mydoc is None:
@@ -199,6 +252,11 @@ def exist_group(group_name):
 
 
 def offline_message_send(_client):
+    """
+    Kullanıcılara offline iken gelen mesajları veri tabanından isteyerek kullanıcıya iletir
+    :param _client: Görüntülemek isteyen client (socket.client)
+    :return: 1 (str)
+    """
     username = None
     for client in all_connection:
         if client['client'] == _client:
@@ -230,6 +288,11 @@ def offline_message_send(_client):
 
 
 def all_users(_client):
+    """
+    Tüm kayıtlı kullanıcıları veri tabanından alır
+    :param _client: Görüntülemek isteyen client (socket.client)
+    :return: 1 veya 0 (str)
+    """
     try:
         res = [ele['username'] for ele in userdb.find()]
         users = ", ".join(res)
@@ -241,6 +304,12 @@ def all_users(_client):
 
 
 def group_member(_client, _message):
+    """
+    Grup da olan kullanıcaları veri tabanından alır
+    :param _client: Görüntülemek isteyen client (socket.client)
+    :param _message: Görüntülenmesi için grup ismi (str) exp = (prefix+groupname)
+    :return: 1 veya 0 (str)
+    """
     iter, group = _message.split('+', 1)
     myquery = {"groupname": group}
     try:
@@ -253,6 +322,12 @@ def group_member(_client, _message):
 
 
 def user_group_member(_client, _message):
+    """
+    Kullanıcının içerisinde bulunduğu grupları listeler.
+    :param _client: Görüntülemek isteyen client (socket.client)
+    :param _message: Görüntülemek isteyen kullanıcı ismi (str) exp = (prefix+username)
+    :return: 1 veya 0 (str)
+    """
     iter, user = _message.split('+', 1)
     user = user[1:]
     try:
@@ -265,6 +340,12 @@ def user_group_member(_client, _message):
 
 
 def create_group(_client, _message):
+    """
+    Grup kurulmasını sağlar
+    :param _client: Kurmak isteyen client (socket.client)
+    :param _message: Kurulmak istenen gruop ismi (str) exp = (prefix+groupname)
+    :return: 0 veya 1 (str) Grup mevcut ise 0 kuruluş başarılı ise 1
+    """
     iter, groupname = _message.split('+', 1)
     createrUsername = [client_to_username(_client)]
     if exist_group(groupname) == 1:
@@ -280,6 +361,13 @@ def create_group(_client, _message):
 
 
 def add_group(_client, _message):
+    """
+    Mevcut gruba kullanıcı eklenmesini sağlar
+    :param _client: Eklemek isteyen client (socket.client)
+    :param _message: Girilen isme birden fazla kullanıcı ismi barındıran mesaj(str)
+    exp =(prefix+groupname+username+username+...)
+    :return: 1 veya 0 (str)
+    """
     messageSplit = _message.split('+')
     iter, groupname, users = messageSplit[0], messageSplit[1], messageSplit[2:]
     myquery = {"groupname": groupname}
@@ -300,12 +388,23 @@ def add_group(_client, _message):
 
 
 def disconnect_user_delete(_address):
+    """
+    Kullanıcının server ile bağlantısında bağlantı listesinden silinmesi
+    :param _address: Bağlantısı kesilen adres
+    :return: None
+    """
     global all_connection
     all_connection = [i for i in all_connection if not (i['address'] == _address)]
     # print(all_connection)
 
 
 def threaded_client(connection, _address):
+    """
+    Clientlerin threadler sayesinde birden fazla bağlantı oluşturulması
+    :param connection: Bağlantı clienti (socket.client)
+    :param _address: Bağlantı adres (socket.address)
+    :return: None
+    """
     connection.send(str.encode('Welcome to the Server'))
     while True:
         try:
@@ -323,6 +422,11 @@ def threaded_client(connection, _address):
 
 
 def client_to_username(_client):
+    """
+    Girilen client ile username verisini almak
+    :param _client: Kullanıcı adı isteyen client (socket.client)
+    :return: username (str) Kullanıcı adı
+    """
     username = None
     for client in all_connection:
         if client['client'] == _client:
@@ -331,6 +435,11 @@ def client_to_username(_client):
 
 
 def username_to_client(username: str):
+    """
+    Girilen Kullanıcı adından clienti almak
+    :param username: Girilen kullanıcı adı  (str)
+    :return: client (socket.client) Kullanıcının bağlı olduğu client
+    """
     userClient = None
     for client in all_connection:
         if client['username'] == username:
