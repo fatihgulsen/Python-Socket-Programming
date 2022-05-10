@@ -7,7 +7,9 @@ ClientSocket = socket.socket()
 host = '127.0.0.1'
 port = 1233
 username = None
+
 print('Waiting for connection')
+
 try:
     ClientSocket.connect((host, port))
 except socket.error as e:
@@ -30,6 +32,7 @@ def receive_message():
             print(Response.decode())
         except Exception as e:
             print('Hata : ', e)
+            break
 
 
 def register():
@@ -116,7 +119,8 @@ def all_users():
     ClientSocket.sendall(str.encode('//allusers'))
 
 
-def group_members(groupname):  # todo menude ekle
+def group_members():
+    groupname = input('Group Name : ')
     ClientSocket.sendall(str.encode('//group+' + groupname))
 
 
@@ -124,6 +128,20 @@ def user_group_members():
     global username
     if username is not None:
         ClientSocket.sendall(str.encode('//usermember+' + username))
+
+
+def create_group():
+    Input = input('Create Group name : ')
+    if Input is not None:
+        ClientSocket.sendall(str.encode("//create+"+Input))
+    pass
+
+
+def add_group():
+    Input = input('Add group member (groupname+user+user..) : ')
+    if Input is not None:
+        ClientSocket.sendall(str.encode("//addgroup+"+Input))
+    pass
 
 
 def offline_message():
@@ -145,7 +163,7 @@ def menu():
             send_message_to_user()
             pass
         elif Input.capitalize() == '3':
-            send_message_to_group()
+            group_menu()
             pass
         elif Input.capitalize() == '9':
             users_menu()
@@ -200,9 +218,20 @@ def users_menu():
     elif Input == '2':
         online_users()
     elif Input == '3':
-        group_members(input('Group Name : '))
+        group_members()
     elif Input == '4':
         user_group_members()
+
+
+def group_menu():
+    print("Group message(1)\nCreate Group(2)\nAdd member Group(3)")
+    Input = input("Select menu (1,2,3): ")
+    if Input == '1':
+        send_message_to_group()
+    elif Input == '2':
+        create_group()
+    elif Input == '3':
+        add_group()
 
 
 Response = ClientSocket.recv(1024)
