@@ -1,8 +1,6 @@
 import socket
 from _thread import *
-from sqlalchemy import null
 from pymongo import MongoClient
-import pymongo
 
 CONNECTION_STRING = "mongodb://localhost:27017"
 client = MongoClient(CONNECTION_STRING)
@@ -15,6 +13,7 @@ groupdb = socketdb['Group']
 ServerSocket = socket.socket()
 host = '127.0.0.1'
 port = 1233
+
 ThreadCount = 0
 
 all_connection = []
@@ -37,7 +36,7 @@ def message_control(message, _client, _address):
     :param _address: Gönderen adres (socket.address)
     :return:  1 veya 0 (str)
     """
-    return_value = null
+    return_value = None
     if message.startswith('!'):
         username = message[1:]
         return_value = login_server(username, _client, _address)

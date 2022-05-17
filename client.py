@@ -32,7 +32,6 @@ def receive_message():
                 # print('Mesaj Gönderilemedi')
                 continue
             # else:
-
             print(Response.decode())
         except Exception as e:
             print('Hata : ', e)
